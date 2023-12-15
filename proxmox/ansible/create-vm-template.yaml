@@ -4,11 +4,14 @@
   name: "create VM template"
   vars:
     vm:
-      cloud_image_url: https://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64.img
-      cloud_image_path: /tmp/ubuntu-2004-server-amd64.qcow2
-      template_id: 1001
-      template_name: ubuntu-2004-cloudinit-template
-      template_memory: 4096
+      cloud_image_url: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
+      cloud_image_path: /tmp/ubuntu-2404-server-amd64.img
+      pve_storage: data
+      template_id: 9500
+      template_name: ubuntu-2404-cloudinit-template
+      template_cores: 1
+      template_memory: 1024
+      template_net_bridge: vmbr5
   tasks:
     - name : download cloud image
       get_url:
@@ -16,20 +19,36 @@
         dest: "{{ vm.cloud_image_path }}"
         mode: 0700
 
+    - name: install guest agent
+      command: "virt-customize -a '{{ vm.cloud_image_path }}' --install qemu-guest-agent"
+      become: yes
+
+    - name: change preserve hostname config
+      command: "virt-customize -a {{ vm.cloud_image_path | quote }} --run-command \"sed -i 's/preserve_hostname: false/preserve_hostname: true/g' /etc/cloud/cloud.cfg\""
+      become: yes
+
+    - name: remove original hostname
+      command: "virt-customize -a {{ vm.cloud_image_path | quote }} --run-command \"truncate -s0 /etc/hostname\""
+      become: yes
+
+    - name: remove machine ID used when getting an ip from dhcp
+      command: "virt-customize -a {{ vm.cloud_image_path | quote }} --run-command \"echo -n > /etc/machine-id\""
+      become: yes
+
     - name: create a VM to use as a template
-      command: "qm create {{ vm.template_id }} --name {{ vm.template_name }} --memory {{ vm.template_memory }} --net0 virtio,bridge=vmbr0"
+      command: "qm create {{ vm.template_id }} --name {{ vm.template_name }} --memory {{ vm.template_memory }} --cores {{ vm.template_cores }} --net0 virtio,bridge={{ vm.template_net_bridge }}"
       become: yes
 
     - name: import disk image
-      command: "qm importdisk {{ vm.template_id }} {{ vm.cloud_image_path }} local-lvm"
+      command: "qm importdisk {{ vm.template_id }} {{ vm.cloud_image_path }} {{ vm.pve_storage }}"
       become: yes
 
     - name: configure VM to use imported image
-      command: "qm set {{ vm.template_id }} --scsihw virtio-scsi-pci --scsi0 local-lvm:vm-{{ vm.template_id }}-disk-0"
+      command: "qm set {{ vm.template_id }} --scsihw virtio-scsi-pci --scsi0 {{ vm.pve_storage }}:vm-{{ vm.template_id }}-disk-0"
       become: yes
 
     - name: add cloud-init image as CDROM
-      command: "qm set {{ vm.template_id }} --ide2 local-lvm:cloudinit"
+      command: "qm set {{ vm.template_id }} --ide2 {{ vm.pve_storage}}:cloudinit"
       become: yes
 
     - name: configure boot from the image
@@ -40,6 +59,14 @@
       command: "qm set {{ vm.template_id }} --serial0 socket --vga serial0"
       become: yes
 
+    - name: enable agent
+      command: "qm set {{ vm.template_id }} --agent enabled=1"
+      become: yes
+
     - name: create template
       command: "qm template {{ vm.template_id }}"
+      become: yes
+
+    - name: clean up
+      command: "rm {{ vm.cloud_image_path }}"
       become: yes

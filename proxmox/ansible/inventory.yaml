@@ -3,4 +3,4 @@ all:
     pve:
       hosts:
         proxmox-master:
-          ansible_host: proxmox.local
+          ansible_host: pve.wongway.io
