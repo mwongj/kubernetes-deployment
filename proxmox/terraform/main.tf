@@ -1,5 +1,6 @@
 resource "proxmox_vm_qemu" "control_plane" {
   count             = 1
+
   name              = "control-plane-${count.index}.k8s.cluster.ad.wongway.io"
   target_node       = "${var.pm_node}"
   agent		    = 1
@@ -7,6 +8,7 @@ resource "proxmox_vm_qemu" "control_plane" {
   clone             = "ubuntu-2404-cloudinit-template"
 
   os_type           = "cloud-init"
+  qemu_os	    = "other"
   cores             = 4
   sockets           = 1
   cpu               = "host"
@@ -53,7 +55,8 @@ resource "proxmox_vm_qemu" "control_plane" {
   ## TF to think this needs to be rebuilt on every apply
   lifecycle {
      ignore_changes = [
-       network
+       network,
+       pool
      ]
   }
 
@@ -61,6 +64,7 @@ resource "proxmox_vm_qemu" "control_plane" {
 
 resource "proxmox_vm_qemu" "worker_nodes" {
   count             = 2
+
   name              = "worker-${count.index}.k8s.cluster.ad.wongway.io"
   target_node       = "${var.pm_node}"
   agent		    = 1
@@ -68,6 +72,7 @@ resource "proxmox_vm_qemu" "worker_nodes" {
   clone             = "ubuntu-2404-cloudinit-template"
 
   os_type           = "cloud-init"
+  qemu_os	    = "other"
   cores             = 2
   sockets           = 1
   cpu               = "host"
@@ -114,7 +119,25 @@ resource "proxmox_vm_qemu" "worker_nodes" {
   ## TF to think this needs to be rebuilt on every apply
   lifecycle {
      ignore_changes = [
-       network
+       network,
+       pool
      ]
   }
+}
+
+locals {
+  control_plane_ips = proxmox_vm_qemu.control_plane.*.default_ipv4_address
+  worker_node_ips = proxmox_vm_qemu.worker_nodes.*.default_ipv4_address
+}
+
+resource "local_file" "ansible_inventory" {
+  filename = "inventory.ini"
+  content = templatefile("${path.module}/templates/inventory.tftpl",
+    {
+      suffix	= ".${var.k8s_domain}"
+      user	= "ubuntu"
+      control-plane = local.control_plane_ips
+      worker-nodes  = local.worker_node_ips
+    }
+  )
 }

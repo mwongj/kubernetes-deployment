@@ -1,0 +1,10 @@
+[control_plane]
+%{ for index, ip in control-plane ~}
+control-plane-${index}${suffix} ansible_host=${ip} ansible_user=${user}
+%{ endfor ~}
+
+[worker_nodes]
+%{ for index, ip in worker-nodes ~}
+worker-${index}${suffix} ansible_host=${ip} ansible_user=${user}
+%{ endfor ~}
+

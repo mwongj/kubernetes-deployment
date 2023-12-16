@@ -1,3 +1,11 @@
+variable "ansible_inventory_path" {
+  default = "/home/repos/kubernetes-deployment/ansible"
+}
+
+variable "k8s_domain" {
+  default = "k8s.cluster.ad.wongway.io"
+}
+
 variable "pm_api_url" {
   default = "https://pve.wongway.io/api2/json"
 }
