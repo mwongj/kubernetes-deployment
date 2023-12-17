@@ -1,12 +1,17 @@
-# Link to API docs: https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2
+# Link to API docs: https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3
 
-apiVersion: kubeadm.k8s.io/v1beta2
-kind: JoinConfiguration
-nodeRegistration:
-  criSocket: "unix:///run/containerd/containerd.sock"
+apiVersion: kubeadm.k8s.io/v1beta3
+caCertPath: /etc/kubernetes/pki/ca.crt
 discovery:
   bootstrapToken:
-    apiServerEndpoint: "{{ hostvars[groups['control-plane'][0]]['ansible_default_ipv4']['address'] }}:6443"
-    token: "{{ token }}"
+    apiServerEndpoint: "{{ hostvars[groups['control_plane'][0]]['ansible_default_ipv4']['address'] }}:6443"
     caCertHashes:
-      - "{{ cert_hash }}"
+    - "{{ cert_hash }}"
+    token: "{{ token }}"
+  timeout: 5m0s
+  tlsBootstrapToken: "{{ token }}"
+kind: JoinConfiguration
+nodeRegistration:
+  criSocket: unix:///run/containerd/containerd.sock
+  imagePullPolicy: IfNotPresent
+  taints: null

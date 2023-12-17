@@ -1,5 +1,5 @@
 ---
-- hosts: control-plane
+- hosts: control_plane
   name: "Install MetalLB"
   roles:
     - role: metallb

@@ -39,14 +39,14 @@ Installation consists of the following phases:
 
 To prepare machines for Kubernetes installation, run:
 ```
-ansible-playbook -i ansible/inventory.yaml ansible/bootstrap.yaml -K
+ansible-playbook -i proxmox/terraform/inventory.ini ansible/bootstrap.yaml -K
 ```
 
 > **NOTE:** the bootstrap step usually required to run only once or when new nodes joined.
 
 To install Kubernetes, run:
 ```
-ansible-playbook -i ansible/inventory.yaml ansible/kubernetes-install.yaml -K
+ansible-playbook -i proxmox/terraform/inventory.ini ansible/kubernetes-install.yaml -K
 ```
 
 Once the playbook run completes, a kubeconfig file `admin.conf` will be fetched to the current directory. To verify
@@ -64,7 +64,7 @@ Consider running [sonobuoy](https://sonobuoy.io/) conformance test to validate t
 
 To uninstall Kubernetes, run:
 ```
-ansible-playbook -i ansible/inventory.yaml ansible/kubernetes-reset.yaml -K
+ansible-playbook -i proxmox/terraform/inventory.ini ansible/kubernetes-reset.yaml -K
 ```
 This playbook will run `kubeadm reset` on all nodes, remove configuration changes, and stop Kubelets.
 
@@ -113,7 +113,7 @@ environment so the addresses can be allocated.
 
 To install MetalLB, run:
 ```
-ansible-playbook -i ansible/inventory.yaml ansible/metallb.yaml -K
+ansible-playbook -i proxmox/terraform/inventory.ini ansible/metallb.yaml -K
 ```
 
 ## Kubernetes Dashboard

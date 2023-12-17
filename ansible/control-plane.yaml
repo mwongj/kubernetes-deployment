@@ -1,5 +1,5 @@
 ---
-  - hosts: control-plane
+  - hosts: control_plane
     name: "Bootstrap Kubernetes Control Plane"
     roles:
       - name: kubeadm init

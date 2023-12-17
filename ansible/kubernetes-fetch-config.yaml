@@ -1,5 +1,5 @@
 ---
-- hosts: control-plane
+- hosts: control_plane
   name: "Copy kubeconfig from remote"
   tasks:
     - name: fetching

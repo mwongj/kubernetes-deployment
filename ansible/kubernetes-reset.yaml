@@ -1,11 +1,11 @@
 ---
-  - hosts: worker-nodes
+  - hosts: worker_nodes
     name: "Resetting worker nodes"
     roles:
       - name: run kubeadm reset
         role: kubeadm-reset
 
-  - hosts: control-plane
+  - hosts: control_plane
     name: "Resetting control plane nodes"
     roles:
       - name: run kubeadm reset

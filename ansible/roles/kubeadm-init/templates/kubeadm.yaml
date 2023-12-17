@@ -1,35 +1,44 @@
-# Link to API docs: https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2
+# Link to API docs: https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3
 
-apiVersion: kubeadm.k8s.io/v1beta2
-kind: ClusterConfiguration
-clusterName: "{{ kubernetes.name }}"
-kubernetesVersion: "{{ kubernetes.version }}"
-certificatesDir: /etc/kubernetes/pki
+apiVersion: kubeadm.k8s.io/v1beta3
+bootstrapTokens:
+- groups:
+  - system:bootstrappers:kubeadm:default-node-token
+  token: z8iarq.x7dahe7bsoap1qte
+  ttl: 24h0m0s
+  usages:
+  - signing
+  - authentication
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: "{{ ansible_default_ipv4.address }}"
+  bindPort: 6443
+nodeRegistration:
+  criSocket: unix:///run/containerd/containerd.sock
+  imagePullPolicy: IfNotPresent
+  name: "{{ inventory_hostname }}"
+  taints:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/master
+---
 apiServer:
   extraArgs:
     authorization-mode: Node,RBAC
-#    enable-admission-plugins: NamespaceLifecycle,NodeRestriction,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota
+    #    enable-admission-plugins: NamespaceLifecycle,NodeRestriction,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota
   timeoutForControlPlane: 4m0s
+apiVersion: kubeadm.k8s.io/v1beta3
+certificatesDir: /etc/kubernetes/pki
+clusterName: "{{ kubernetes.name }}"
 controllerManager: {}
-scheduler: {}
-dns:
-  type: CoreDNS
+dns: {}
 etcd:
   local:
     dataDir: /var/lib/etcd
+imageRepository: registry.k8s.io
+kind: ClusterConfiguration
+kubernetesVersion: "{{ kubernetes.version }}"
 networking:
   dnsDomain: "{{ networking.domain }}"
   podSubnet: "{{ networking.pod_subnet }}"
   serviceSubnet: "{{ networking.service_subnet }}"
----
-apiVersion: kubeadm.k8s.io/v1beta2
-kind: InitConfiguration
-nodeRegistration:
-  criSocket: "unix:///run/containerd/containerd.sock"
-  name: "{{ inventory_hostname }}"
-  taints:
-    - effect: NoSchedule
-      key: node-role.kubernetes.io/master
-localAPIEndpoint:
-  advertiseAddress: "{{ ansible_default_ipv4.address }}"
-  bindPort: 6443
+scheduler: {}
