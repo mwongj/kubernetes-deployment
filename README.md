@@ -80,28 +80,12 @@ a replicated storage backing Persistent Volumes.
 To use only host-local Persistent Volumes, it is sufficient to install a lite
 version of OpenEBS:
 ```
-kubectl apply -f https://openebs.github.io/charts/openebs-operator-lite.yaml
+kubectl --kubeconfig=admin.conf apply -f https://openebs.github.io/charts/openebs-operator-lite.yaml
 ```
 
 Once the Operator is installed, create a `StorageClass` and annotate it as **default**:
 ```
-kubectl apply -f - <<EOF
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: openebs-hostpath
-  annotations:
-    storageclass.kubernetes.io/is-default-class: "true"
-    openebs.io/cas-type: local
-    cas.openebs.io/config: |
-      - name: StorageType
-        value: "hostpath"
-      - name: BasePath
-        value: "/var/openebs/local/"
-provisioner: openebs.io/local
-volumeBindingMode: WaitForFirstConsumer
-reclaimPolicy: Delete
-EOF
+kubectl --kubeconfig=admin.conf apply -f ansible/openebs-sc.yaml
 ```
 
 To verify the installation, follow the official [OpenEBS documentation](https://openebs.io/docs/user-guides/localpv-hostpath#install-verification).
