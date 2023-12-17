@@ -1,7 +1,7 @@
 resource "proxmox_vm_qemu" "control_plane" {
   count             = 1
 
-  name              = "control-plane-${count.index}.k8s.cluster.ad.wongway.io"
+  name              = "control-plane-${count.index}.k8s.ad.wongway.io"
   target_node       = "${var.pm_node}"
   agent		    = 1
 
@@ -45,7 +45,7 @@ resource "proxmox_vm_qemu" "control_plane" {
   # Reboot the machines to get the correct hostname set for DNS
   provisioner "remote-exec" {
     inline = [
-      "sudo hostnamectl set-hostname control-plane-${count.index}.k8s.cluster.ad.wongway.io",
+      "sudo hostnamectl set-hostname control-plane-${count.index}.k8s.ad.wongway.io",
       "sudo reboot"
     ]
   }
@@ -63,9 +63,9 @@ resource "proxmox_vm_qemu" "control_plane" {
 }
 
 resource "proxmox_vm_qemu" "worker_nodes" {
-  count             = 2
+  count             = 1
 
-  name              = "worker-${count.index}.k8s.cluster.ad.wongway.io"
+  name              = "worker-${count.index}.k8s.ad.wongway.io"
   target_node       = "${var.pm_node}"
   agent		    = 1
 
@@ -109,7 +109,7 @@ resource "proxmox_vm_qemu" "worker_nodes" {
   # Reboot the machines to get the correct hostname set for DNS
   provisioner "remote-exec" {
     inline = [
-      "sudo hostnamectl set-hostname worker-${count.index}.k8s.cluster.ad.wongway.io",
+      "sudo hostnamectl set-hostname worker-${count.index}.k8s.ad.wongway.io",
       "sudo reboot"
     ]
   }
@@ -134,7 +134,7 @@ resource "local_file" "ansible_inventory" {
   filename = "inventory.ini"
   content = templatefile("${path.module}/templates/inventory.tftpl",
     {
-      suffix	= ".${var.k8s_domain}"
+      suffix	= ".k8s.ad.wongway.io"
       user	= "ubuntu"
       control-plane = local.control_plane_ips
       worker-nodes  = local.worker_node_ips
