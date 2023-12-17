@@ -118,7 +118,18 @@ kubectl --kubeconfig=admin.conf apply -f ansible/kubernetes-dashboard-adminuser.
 
 Once the user is created the login token will be output to a file `kubernetes-dashboard-admin-token-{{ inventory_hostname }}.txt` in the current directory. You may also get the login token by running:
 ```
-kubectl -n kubernetes-dashboard get secret $(kubectl -n kubernetes-dashboard get sa/admin-user -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}"
+kubectl --kubeconfig=admin.conf -n kubernetes-dashboard get secret $(kubectl -n kubernetes-dashboard get sa/admin-user -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}"
+```
+
+You can also create a long-lived token as per [Getting a long-lived Bearer Token for ServiceAccount](https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md#getting-a-long-lived-bearer-token-for-serviceaccount).
+
+To remove the admin user created, run:
+```
+kubectl --kubeconfig=admin.conf apply -f ansible/kubernetes-dashboard-adminuser-reset.yaml -K
+```
+Afterwards, you can run the `get secret` command above and you should receive:
+```
+Error from server (NotFound): secrets "admin-user" not found
 ```
 
 ## Istio

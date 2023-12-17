@@ -1,0 +1,6 @@
+---
+  - hosts: control_plane
+    name: "Reset Kubernetes Dashboard Admin"
+    roles:
+      - name: kubernetes admin user reset
+        role: kubernetes-dashboard-admin-reset

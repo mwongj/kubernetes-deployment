@@ -1,0 +1,7 @@
+- name: delete service account
+  become: yes
+  command: kubectl -n kubernetes-dashboard delete serviceaccount {{ kubernetes_dashboard.user }} --kubeconfig=/etc/kubernetes/admin.conf
+
+- name: delete role bindings
+  become: yes
+  command: kubectl -n kubernetes-dashboard delete clusterrolebinding {{ kubernetes_dashboard.user }} --kubeconfig=/etc/kubernetes/admin.conf
