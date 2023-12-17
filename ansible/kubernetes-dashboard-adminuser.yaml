@@ -1,0 +1,6 @@
+---
+  - hosts: control_plane
+    name: "Create Kubernetes Dashboard Admin"
+    roles:
+      - name: kubernetes admin user
+        role: kubernetes-dashboard-admin

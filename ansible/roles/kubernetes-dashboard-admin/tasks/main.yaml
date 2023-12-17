@@ -1,0 +1,21 @@
+- name: copy kubernetes dashboard config
+  become: yes
+  template:
+    src: adminuser.yaml
+    dest: /etc/adminuser.yaml
+
+- name: adding Kubernetes dashboard admin user
+  become: yes
+  command: kubectl apply -f /etc/adminuser.yaml --kubeconfig=/etc/kubernetes/admin.conf
+  run_once: true
+
+- name: create admin bearer token for login
+  become: yes
+  command: kubectl -n kubernetes-dashboard create token {{ kubernetes_dashboard.user }} --kubeconfig=/etc/kubernetes/admin.conf
+  register: command_output
+
+- name: capture token
+  ansible.builtin.copy:
+    content: "{{ command_output.stdout }}"
+    dest: "../kubernetes-dashboard-admin-token-{{ inventory_hostname }}.txt"
+  delegate_to: localhost

@@ -30,6 +30,8 @@ Software used:
 The [proxmox](proxmox) directory of this repo contains automation for the initial
 infrastructure bootstrapping using `cloud-init` templates and Proxmox Terraform provider.
 
+The terraform will generate a dynamic inventory file `proxmox/terraform/inventory.ini` to use with ansible.
+
 ## Quickstart
 Installation consists of the following phases:
 * prepare machines for Kubernetes installation
@@ -109,32 +111,12 @@ kubectl --kubeconfig=admin.conf apply -f https://raw.githubusercontent.com/kuber
 To access the dashboard UI, run `kubectl --kubeconfig=admin.conf proxy` and open this link in your browser:
 [localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/](http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/).
 
-To login into the Dashboard, it is recommended to create a user as per the [Dashboard docs](https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md):
-```shell
-kubectl apply -f - <<EOF
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: admin-user
-  namespace: kubernetes-dashboard
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: admin-user
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-- kind: ServiceAccount
-  name: admin-user
-  namespace: kubernetes-dashboard
-EOF
+To login into the Dashboard, it is recommended to create a user as per the [Dashboard docs](https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md). To create an admin user verify the ansible variable kubernetes_dashboard.name is correct then run:
+```
+kubectl --kubeconfig=admin.conf apply -f ansible/kubernetes-dashboard-adminuser.yaml -K
 ```
 
-Once the user is created, we can get the login token:
+Once the user is created the login token will be output to a file `kubernetes-dashboard-admin-token-{{ inventory_hostname }}.txt` in the current directory. You may also get the login token by running:
 ```
 kubectl -n kubernetes-dashboard get secret $(kubectl -n kubernetes-dashboard get sa/admin-user -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}"
 ```
