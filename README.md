@@ -103,10 +103,10 @@ ansible-playbook -i proxmox/terraform/inventory.ini ansible/metallb.yaml -K
 ## Kubernetes Dashboard
 Install Kubernetes Dashboard following the [docs](https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/). At the moment of writing, it is sufficient to run:
 ```
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.4.0/aio/deploy/recommended.yaml
+kubectl --kubeconfig=admin.conf apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
 ```
 
-To access the dashboard UI, run `kubectl proxy` and open this link in your browser:
+To access the dashboard UI, run `kubectl --kubeconfig=admin.conf proxy` and open this link in your browser:
 [localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/](http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/).
 
 To login into the Dashboard, it is recommended to create a user as per the [Dashboard docs](https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md):
