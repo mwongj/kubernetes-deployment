@@ -51,10 +51,15 @@ To install Kubernetes, run:
 ansible-playbook -i proxmox/terraform/inventory.ini ansible/kubernetes-install.yaml -K
 ```
 
-Once the playbook run completes, a kubeconfig file `admin.conf` will be fetched to the current directory. To verify
-the cluster is up and available, run:
+Once the playbook run completes, a kubeconfig file `admin.conf` will be fetched to the current directory. To prevent needing to specify the kubeconfig set the `KUBECONFIG` environment variable with:
 ```
-$> kubectl --kubeconfig=admin.conf get nodes
+export KUBECONFIG="${KUBECONFIG}:${HOME}/path/to/admin.conf"
+```
+
+To verify the cluster is up and available, run:
+
+```
+$> kubectl get nodes
 NAME                          STATUS   ROLES                  AGE     VERSION
 control-plane-0.k8s.cluster   Ready    control-plane,master   4m40s   v1.21.6
 worker-0                      Ready    <none>                 4m5s    v1.21.6
@@ -82,12 +87,12 @@ a replicated storage backing Persistent Volumes.
 To use only host-local Persistent Volumes, it is sufficient to install a lite
 version of OpenEBS:
 ```
-kubectl --kubeconfig=admin.conf apply -f https://openebs.github.io/charts/openebs-operator-lite.yaml
+kubectl apply -f https://openebs.github.io/charts/openebs-operator-lite.yaml
 ```
 
 Once the Operator is installed, create a `StorageClass` and annotate it as **default**:
 ```
-kubectl --kubeconfig=admin.conf apply -f ansible/openebs-sc.yaml
+kubectl apply -f ansible/openebs-sc.yaml
 ```
 
 To verify the installation, follow the official [OpenEBS documentation](https://openebs.io/docs/user-guides/localpv-hostpath#install-verification).
@@ -105,7 +110,7 @@ ansible-playbook -i proxmox/terraform/inventory.ini ansible/metallb.yaml -K
 ## Kubernetes Dashboard
 Install Kubernetes Dashboard following the [docs](https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/). At the moment of writing, it is sufficient to run:
 ```
-kubectl --kubeconfig=admin.conf apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
 ```
 
 To access the dashboard UI, run `kubectl --kubeconfig=admin.conf proxy` and open this link in your browser:
@@ -113,19 +118,19 @@ To access the dashboard UI, run `kubectl --kubeconfig=admin.conf proxy` and open
 
 To login into the Dashboard, it is recommended to create a user as per the [Dashboard docs](https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md). To create an admin user verify the ansible variable kubernetes_dashboard.name is correct then run:
 ```
-kubectl --kubeconfig=admin.conf apply -f ansible/kubernetes-dashboard-adminuser.yaml -K
+ansible-playbook -i proxmox/terraform/inventory.ini ansible/kubernetes-dashboard-adminuser.yaml -K
 ```
 
 Once the user is created the login token will be output to a file `kubernetes-dashboard-admin-token-{{ inventory_hostname }}.txt` in the current directory. You may also get the login token by running:
 ```
-kubectl --kubeconfig=admin.conf -n kubernetes-dashboard get secret $(kubectl -n kubernetes-dashboard get sa/admin-user -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}"
+kubectl -n kubernetes-dashboard get secret $(kubectl -n kubernetes-dashboard get sa/admin-user -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}"
 ```
 
 You can also create a long-lived token as per [Getting a long-lived Bearer Token for ServiceAccount](https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md#getting-a-long-lived-bearer-token-for-serviceaccount).
 
 To remove the admin user created, run:
 ```
-kubectl --kubeconfig=admin.conf apply -f ansible/kubernetes-dashboard-adminuser-reset.yaml -K
+ansible-playbook -i proxmox/terraform/inventory.ini ansible/kubernetes-dashboard-adminuser-reset.yaml -K
 ```
 Afterwards, you can run the `get secret` command above and you should receive:
 ```
