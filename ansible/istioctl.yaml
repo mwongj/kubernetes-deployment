@@ -1,0 +1,6 @@
+---
+- hosts: control_plane
+  name: "Install istioctl"
+  roles:
+    - role: istioctl
+      run_once: true

@@ -1,0 +1,9 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  namespace: {{ istioctl.namespace }}
+  name: {{ istioctl.name }}
+spec:
+  profile: default
+  meshConfig:
+    accessLogFile: /dev/stdout

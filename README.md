@@ -145,7 +145,7 @@ To simplify the installation process, download and install `istioctl` from [rele
 It is recommended to install Istio with the [default configuration profile](https://istio.io/latest/docs/setup/additional-setup/config-profiles/). This profile is recommended for production deployments and deploys a single ingress gateway.
 To install Istio with the default profile, run:
 ```
-istioctl install --set profile=default -y
+ansible-playbook -i proxmox/terraform/inventory.ini ansible/istioctl.yaml -K
 ```
 
 Once Istio is installed, you can check that the Ingress Gateway is up and has an associated `Service`

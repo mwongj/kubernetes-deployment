@@ -1,8 +1,8 @@
-- name: copy MetalLB manifests
+- name: copy MetalLB manifest
   become: yes
   template:
-    src: metallb.yaml
-    dest: /etc/metallb.yaml
+    src: metallb-native.yaml
+    dest: /etc/metallb-native.yaml
 
 - name: copy MetalLB config
   become: yes
@@ -10,14 +10,16 @@
     src: metallb-config.yaml
     dest: /etc/metallb-config.yaml
 
-- name: create namespace
+- name: install MetalLB
   become: yes
-  command: kubectl create namespace metallb-system --kubeconfig=/etc/kubernetes/admin.conf
+  command: kubectl apply -f /etc/metallb-native.yaml --kubeconfig=/etc/kubernetes/admin.conf
+
+# TODO: need better logic. Applying the metallb config fails when called immediately after installation
+- name: Sleep for 90s
+  ansible.builtin.wait_for:
+    timeout: 90s    
+  delegate_to: localhost
 
 - name: install MetalLB config
   become: yes
   command: kubectl apply -f /etc/metallb-config.yaml --kubeconfig=/etc/kubernetes/admin.conf
-
-- name: install MetalLB
-  become: yes
-  command: kubectl apply -f /etc/metallb.yaml --kubeconfig=/etc/kubernetes/admin.conf

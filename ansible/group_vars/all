@@ -6,6 +6,16 @@ kubernetes:
 kubernetes_dashboard:
   user: admin-user
 
+istioctl:
+  version: 1.20.1
+  download_url: https://github.com/istio/istio/releases/download/1.20.1/istio-1.20.1-linux-amd64.tar.gz
+  bin_path: /usr/local/bin
+  file_owner: root
+  file_group: root
+  file_mode: '0755'
+  namespace: istio-system
+  name: istiocontrolplane
+
 networking:
   domain: ad.wongway.io
   pod_subnet: 10.0.64.0/20
@@ -23,4 +33,4 @@ local:
 
 lab:
   dns: 10.0.1.218
-  metallb_address_range: 10.0.5.150-10.0.5.160
+  metallb_address_range: 10.0.5.100-10.0.5.200

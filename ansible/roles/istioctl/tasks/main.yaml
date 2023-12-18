@@ -1,0 +1,22 @@
+- name: downloading and extracting istioctl
+  ansible.builtin.unarchive:
+    src: "{{ istioctl.download_url }}"
+    dest: "{{ istioctl.bin_path }}"
+    extra_opts:
+      - --strip-components=2
+      - "istio-{{ istioctl.version }}/bin/istioctl"
+    remote_src: yes
+    owner: "{{ istioctl.file_owner }}"
+    group: "{{ istioctl.file_group }}"
+    mode: "{{ istioctl.file_mode }}"
+  become: yes
+
+- name: copy istioctl config
+  become: yes
+  template:
+    src: istioctl-config.yaml
+    dest: /etc/istioctl-config.yaml
+
+- name: install istioctl
+  become: yes
+  command: istioctl install -f /etc/istioctl-config.yaml -c /etc/kubernetes/admin.conf -y

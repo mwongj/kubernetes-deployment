@@ -63,7 +63,7 @@ resource "proxmox_vm_qemu" "control_plane" {
 }
 
 resource "proxmox_vm_qemu" "worker_nodes" {
-  count             = 1
+  count             = 2
 
   name              = "worker-${count.index}.k8s.ad.wongway.io"
   target_node       = "${var.pm_node}"
@@ -73,10 +73,10 @@ resource "proxmox_vm_qemu" "worker_nodes" {
 
   os_type           = "cloud-init"
   qemu_os	    = "other"
-  cores             = 2
+  cores             = 4
   sockets           = 1
   cpu               = "host"
-  memory            = 2048
+  memory            = 8096
   scsihw            = "virtio-scsi-pci"
   bootdisk          = "scsi0"
 
