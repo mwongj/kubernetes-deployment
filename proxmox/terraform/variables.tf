@@ -1,13 +1,16 @@
-variable "ansible_inventory_path" {
-  default = "/home/repos/kubernetes-deployment/ansible"
+variable "k8s_domain" {
+  type        = string
+  description = "Input from environment variable"
 }
 
-variable "k8s_domain" {
-  default = "k8s.cluster.ad.wongway.io"
+variable "vm_ssh_user" {
+  type = string
+  description = "VM SSH user"
 }
 
 variable "pm_api_url" {
-  default = "https://pve.wongway.io/api2/json"
+  type        = string
+  description = "Input from environment variable"
 }
 
 variable "pm_node" {
@@ -15,30 +18,22 @@ variable "pm_node" {
 }
 
 variable "pm_api_token_id" {
-  type	  = string
+  type        = string
   description = "Input from environment variable"
 }
 
 variable "pm_api_token_secret" {
-  type		= string
-  description   = "Input from environment variable"
+  type        = string
+  description = "Input from environment variable"
 }
 
 variable "pm_storage" {
   default = "data"
 }
 
-variable "pm_pool" {
+variable "pm_pool_name" {
   default = "K8s"
 }
-
-#variable "pm_user" {
-#  default = ""
-#}
-
-#variable "pm_password" {
-#  default = ""
-#}
 
 variable "ssh_key_file" {
   default = "~/.ssh/id_rsa.pub"

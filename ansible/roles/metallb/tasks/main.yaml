@@ -17,7 +17,7 @@
 # TODO: need better logic. Applying the metallb config fails when called immediately after installation
 - name: Sleep for 90s
   ansible.builtin.wait_for:
-    timeout: 90s    
+    timeout: 90
   delegate_to: localhost
 
 - name: install MetalLB config
