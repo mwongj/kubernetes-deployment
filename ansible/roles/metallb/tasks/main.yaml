@@ -1,25 +1,27 @@
-- name: copy MetalLB manifest
-  become: yes
-  template:
-    src: metallb-native.yaml
-    dest: /etc/metallb-native.yaml
-
 - name: copy MetalLB config
-  become: yes
+  become: true
   template:
     src: metallb-config.yaml
     dest: /etc/metallb-config.yaml
 
-- name: install MetalLB
-  become: yes
-  command: kubectl apply -f /etc/metallb-native.yaml --kubeconfig=/etc/kubernetes/admin.conf
+- name: add MetalLB helm repo
+  become: true
+  kubernetes.core.helm_repository:
+    name: metallb
+    repo_url: https://metallb.github.io/metallb
 
-# TODO: need better logic. Applying the metallb config fails when called immediately after installation
-- name: Sleep for 90s
-  ansible.builtin.wait_for:
-    timeout: 90
-  delegate_to: localhost
+- name: deploy MetalLB
+  become: true
+  kubernetes.core.helm:
+    name: metallb
+    chart_ref: metallb/metallb
+    release_namespace: metallb-system
+    create_namespace: true
+    kubeconfig: /etc/kubernetes/admin.conf
+    wait: true
+    values_files:
+      - "/etc/metallb-config.yaml"
 
 - name: install MetalLB config
-  become: yes
+  become: true
   command: kubectl apply -f /etc/metallb-config.yaml --kubeconfig=/etc/kubernetes/admin.conf

@@ -1,9 +1,14 @@
-- name: copy Calico manifests
-  become: yes
-  template:
-    src: calico.yaml
-    dest: /etc/calico.yaml
+- name: add Calico helm repo
+  become: true
+  kubernetes.core.helm_repository:
+    name: projectcalico
+    repo_url: https://docs.tigera.io/calico/charts
 
-- name: install Calico
-  become: yes
-  command: kubectl apply -f /etc/calico.yaml --kubeconfig=/etc/kubernetes/admin.conf
+- name: deploy Calico
+  become: true
+  kubernetes.core.helm:
+    name: calico
+    chart_ref: projectcalico/tigera-operator
+    release_namespace: calico-system
+    create_namespace: true
+    kubeconfig: /etc/kubernetes/admin.conf

@@ -1,22 +1,33 @@
-- name: downloading and extracting istioctl
-  ansible.builtin.unarchive:
-    src: "{{ istioctl.download_url }}"
-    dest: "{{ istioctl.bin_path }}"
-    extra_opts:
-      - --strip-components=2
-      - "istio-{{ istioctl.version }}/bin/istioctl"
-    remote_src: yes
-    owner: "{{ istioctl.file_owner }}"
-    group: "{{ istioctl.file_group }}"
-    mode: "{{ istioctl.file_mode }}"
-  become: yes
+- name: add istio helm repo
+  become: true
+  kubernetes.core.helm_repository:
+    name: istio
+    repo_url: https://istio-release.storage.googleapis.com/charts
 
-- name: copy istioctl config
-  become: yes
-  template:
-    src: istioctl-config.yaml
-    dest: /etc/istioctl-config.yaml
+- name: deploy istio base
+  become: true
+  kubernetes.core.helm:
+    name: istio-base
+    chart_ref: istio/base
+    release_namespace: istio-system
+    create_namespace: true
+    kubeconfig: /etc/kubernetes/admin.conf
 
-- name: install istioctl
-  become: yes
-  command: istioctl install -f /etc/istioctl-config.yaml -c /etc/kubernetes/admin.conf -y
+- name: deploy istiod
+  become: true
+  kubernetes.core.helm:
+    name: istiod
+    chart_ref: istio/istiod
+    release_namespace: istio-system
+    wait: true
+    kubeconfig: /etc/kubernetes/admin.conf
+
+- name: deploy istio-ingressgateway
+  become: true
+  kubernetes.core.helm:
+    name: istio-ingressgateway
+    chart_ref: istio/gateway
+    release_namespace: ingress
+    create_namespace: true
+    wait: true
+    kubeconfig: /etc/kubernetes/admin.conf

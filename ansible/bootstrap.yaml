@@ -10,3 +10,6 @@
 
     - name: downloading Kubernetes dependencies
       role: kubernetes-packages
+
+    - name: installing helm
+      role: helm

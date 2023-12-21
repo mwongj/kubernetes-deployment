@@ -1,0 +1,13 @@
+- name: download Helm command line tool
+  ansible.builtin.uri:
+    url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+    return_content: true
+  register: helm_installer
+
+- name: install Helm
+  ansible.builtin.command:
+    cmd: bash
+    stdin: "{{ helm_installer.content }}"
+    creates: /usr/local/bin/helm
+  environment:
+    DESIRED_VERSION: "{{ helm.version | default('') }}"
