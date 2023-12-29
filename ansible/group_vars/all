@@ -19,8 +19,14 @@ istioctl:
   namespace: istio-system
   name: istiocontrolplane
 
+letsencrypt:
+  name: "wongwayio"
+  email: "{{ lookup('ansible.builtin.env', 'EMAIL') }}"
+  cloudflare:
+    api_token: "{{ lookup('ansible.builtin.env', 'CF_API_KEY') }}"
+
 networking:
-  domain: ad.wongway.io
+  domain: "{{ lookup('ansible.builtin.env', 'AD_DOMAIN') }}"
   pod_subnet: 10.0.64.0/20
   service_subnet: 10.96.0.0/12
 

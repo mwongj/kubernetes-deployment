@@ -1,0 +1,6 @@
+---
+- hosts: control_plane
+  name: "Install cert-manager"
+  roles:
+    - name: cert manager
+      role: cert-manager
