@@ -17,6 +17,7 @@ spec:
     - client auth
   dnsNames:
     - "*.wongway.io"
+    - "*.k8s.wongway.io"
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer
