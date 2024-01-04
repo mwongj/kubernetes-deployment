@@ -23,7 +23,9 @@ Software used:
 -   `Calico` for pod networking
 -   `MetalLB` for exposing `LoadBalancer` type services
 -   `OpenEBS` for volume provisioning
+-   `Cert-manager` for managing certificates for SSL termination
 -   `Istio` for ingress and traffic management
+-   `External-dns` for managing remote dns records
 
 ## Pre-requisites
 
@@ -51,7 +53,7 @@ Installation consists of the following phases:
 
 To prepare machines for Kubernetes installation, run:
 
-```
+```console
 ansible-playbook -i ansible/inventory.ini ansible/bootstrap.yaml -K
 ```
 
@@ -59,19 +61,19 @@ ansible-playbook -i ansible/inventory.ini ansible/bootstrap.yaml -K
 
 To install Kubernetes, run:
 
-```
+```console
 ansible-playbook -i ansible/inventory.ini ansible/kubernetes-install.yaml -K
 ```
 
 Once the playbook run completes, a kubeconfig file `admin.conf` will be fetched to the current directory. To prevent needing to specify the kubeconfig set the `KUBECONFIG` environment variable with:
 
-```
+```console
 export KUBECONFIG="${KUBECONFIG}:${HOME}/path/to/admin.conf"
 ```
 
 To verify the cluster is up and available, run:
 
-````kube
+```console
 $> kubectl get nodes
 NAME                                        STATUS   ROLES           AGE     VERSION
 control-plane-0.k8s.cluster.ad.wongway.io   Ready    control-plane   3h13m   v1.29.0
@@ -83,10 +85,8 @@ Consider running [sonobuoy](https://sonobuoy.io/) conformance test to validate t
 
 To uninstall Kubernetes, run:
 
-````
-
+```console
 ansible-playbook -i ansible/inventory.ini ansible/kubernetes-reset.yaml -K
-
 ```
 
 This playbook will run `kubeadm reset` on all nodes, remove configuration changes, and stop Kubelets.
@@ -104,18 +104,14 @@ a replicated storage backing Persistent Volumes.
 To use only host-local Persistent Volumes, it is sufficient to install a lite
 version of OpenEBS:
 
-```
-
+```console
 kubectl apply -f https://openebs.github.io/charts/openebs-operator-lite.yaml
-
 ```
 
 Once the Operator is installed, create a `StorageClass` and annotate it as **default**:
 
-```
-
+```console
 kubectl apply -f ansible/openebs-sc.yaml
-
 ```
 
 To verify the installation, follow the official [OpenEBS documentation](https://openebs.io/docs/user-guides/localpv-hostpath#install-verification).
@@ -127,57 +123,8 @@ environment so the addresses can be allocated.
 
 To install MetalLB, run:
 
-```
-
+```console
 ansible-playbook -i ansible/inventory.ini ansible/metallb.yaml -K
-
-```
-
-## Kubernetes Dashboard
-
-Install Kubernetes Dashboard following the [docs](https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/). At the moment of writing, it is sufficient to run:
-
-```
-
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
-
-```
-
-To access the dashboard UI, run `kubectl --kubeconfig=admin.conf proxy` and open this link in your browser:
-[localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/](http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/).
-
-To login into the Dashboard, it is recommended to create a user as per the [Dashboard docs](https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md). To create an admin user verify the ansible variable kubernetes_dashboard.name is correct then run:
-
-```
-
-ansible-playbook -i ansible/inventory.ini ansible/kubernetes-dashboard-adminuser.yaml -K
-
-```
-
-Once the user is created the login token will be output to a file `kubernetes-dashboard-admin-token-{{ inventory_hostname }}.txt` in the current directory. You may also get the login token by running:
-
-```
-
-kubectl -n kubernetes-dashboard get secret $(kubectl -n kubernetes-dashboard get sa/admin-user -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}"
-
-```
-
-You can also create a long-lived token as per [Getting a long-lived Bearer Token for ServiceAccount](https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md#getting-a-long-lived-bearer-token-for-serviceaccount).
-
-To remove the admin user created, run:
-
-```
-
-ansible-playbook -i ansible/inventory.ini ansible/kubernetes-dashboard-adminuser-reset.yaml -K
-
-```
-
-Afterwards, you can run the `get secret` command above and you should receive:
-
-```
-
-Error from server (NotFound): secrets "admin-user" not found
-
 ```
 
 ## Istio
@@ -188,158 +135,84 @@ To simplify the installation process, download and install `istioctl` from [rele
 It is recommended to install Istio with the [default configuration profile](https://istio.io/latest/docs/setup/additional-setup/config-profiles/). This profile is recommended for production deployments and deploys a single ingress gateway.
 To install Istio with the default profile, run:
 
-```
-
+```console
 ansible-playbook -i ansible/inventory.ini ansible/istioctl.yaml -K
-
 ```
 
 Once Istio is installed, you can check that the Ingress Gateway is up and has an associated `Service`
 of a `LoadBalancer` type with an IP address from MetalLB. Run:
 
-```
-
-kubectl get svc istio-ingressgateway --namespace ingress
-
+```console
+kubectl get svc istio-ingressgateway -n istio-system
 ```
 
 Example:
 
+```console
+NAME                   TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)                                      AGE
+istio-ingressgateway   LoadBalancer   10.108.231.216   10.0.5.100    15021:32014/TCP,80:30636/TCP,443:30677/TCP   21m
 ```
 
-NAME TYPE CLUSTER-IP EXTERNAL-IP PORT(S) AGE
-istio-ingressgateway LoadBalancer 10.110.5.31 10.0.5.100 15021:31008/TCP,80:31790/TCP,443:30208/TCP 21m
+### Deployment exposed via Istio Ingress Gateway
 
-```
+To expose a deployment via an istio ingress gateway there are several resources that are needed:
 
-### Example deployment exposed via Istio Ingress Gateway
+-   [Gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/): A load balancer operating at the edge of the mesh that receives incoming HTTP/TCP connections and allows external traffic to enter the istio service mesh
+-   [Service](https://kubernetes.io/docs/concepts/services-networking/service/): A unit of application behavior bound to a unique name in a service regsitry
+-   [VirtualService](https://istio.io/latest/docs/reference/config/networking/virtual-service/): Defines a set of traffic routing rules to apply. If traffic is matched it is forwarded to the destination service (or subset/version of it) defined in the registry
+-   [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/): Describes the desired state for pods and replicasets
+
+In the previous playbook to install istio a gateway was created in the `istio-system` namespace with a wildcard host pattern so it can be reused by multiple deployments. The deployments will be routed by the `VirtualServices` using the URL path. It is also possible to create a `Gateway` per application but for the demo purposes, a path-based routing seems to be more convenient.
+
+To verify the installation, MetalLB, Ingress Gateway, and Istio configuration let's create a test Nginx `Deployment` to create the other resources needed for routing along with the nginx deployment.:
 
 #### Deploying Nginx
 
-To verify the installation, MetalLB, Ingress Gateway, and Istio configuration let's create
-a test Nginx `Deployment`:
-
+```console
+ kubectl apply -f ansible/apps/examples/nginx/nginx.yaml
 ```
 
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-labels:
-app: nginx
-name: nginx
-spec:
-replicas: 1
-selector:
-matchLabels:
-app: nginx
-template:
-metadata:
-labels:
-app: nginx
-spec:
-containers: - image: nginx
-name: nginx
+To get the gateway ip run:
 
----
-
-apiVersion: v1
-kind: Service
-metadata:
-labels:
-app: nginx
-name: nginx
-spec:
-ports:
-
--   name: http
-    port: 80
-    protocol: TCP
-    targetPort: 80
-    selector:
-    app: nginx
-    type: ClusterIP
-
+```console
+export GATEWAY_IP=$(kubectl get svc -n istio-system istio-ingressgateway -ojsonpath='{.status.loadBalancer.ingress[0].ip}')
 ```
 
-To verify the deployment, run:
+The Nginx welcome page should be available at the gateway ip assigned by metallb, http://$GATEWAY_IP
 
+## Kubernetes Dashboard
+
+Install Kubernetes Dashboard following the [docs](https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/). At the moment of writing, it is sufficient to run:
+
+```console
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
 ```
 
-kubectl port-forward service/nginx 8080:80
+To access the dashboard UI, run `kubectl --kubeconfig=admin.conf proxy` and open this link in your browser:
+[localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/](http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/).
 
+To login into the Dashboard, it is recommended to create a user as per the [Dashboard docs](https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md). To create an admin user verify the ansible variable kubernetes_dashboard.name is correct then run:
+
+```console
+ansible-playbook -i ansible/inventory.ini ansible/kubernetes-dashboard-adminuser.yaml -K
 ```
 
-The Nginx welcome page should be available at [localhost:8080](http://localhost:8080/).
+Once the user is created the login token will be output to a file `kubernetes-dashboard-admin-token-{{ inventory_hostname }}.txt` in the current directory. You may also get the login token by running:
 
-#### Exposing Nginx deployment with Istio `Gateway` and `VirtualService`
-
-To expose a deployment via Istio ingress gateway it is first required to create a [Gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/).
-
-We will create a shared `Gateway` in the `istio-system` namespace with a wildcard host pattern so it can be reused
-by other deployments. The deployments will be routed by the `VirtualServices` using the URL path later on.
-It is also possible to create a `Gateway` per application but for the demo purposes, a path-based routing
-seems to be more convenient.
-
+```console
+kubectl -n kubernetes-dashboard get secret $(kubectl -n kubernetes-dashboard get sa/admin-user -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}"
 ```
 
-apiVersion: networking.istio.io/v1alpha3
-kind: Gateway
-metadata:
-name: shared-gateway
-namespace: istio-system
-spec:
-selector: # Use the default Ingress Gateway installed by Istio
-istio: ingressgateway
-servers:
+You can also create a long-lived token as per [Getting a long-lived Bearer Token for ServiceAccount](https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md#getting-a-long-lived-bearer-token-for-serviceaccount).
 
--   port:
-    number: 80
-    name: http
-    protocol: HTTP
-    hosts:
-    -   "\*"
+To remove the admin user created, run:
 
+```console
+ansible-playbook -i ansible/inventory.ini ansible/kubernetes-dashboard-adminuser-reset.yaml -K
 ```
 
-Now, we should define the route and [create a VirtualService](https://istio.io/latest/docs/reference/config/networking/virtual-service/) to route the traffic to Nginx `Service`:
+Afterwards, you can run the `get secret` command above and you should receive:
 
-```
-
-apiVersion: networking.istio.io/v1beta1
-kind: VirtualService
-metadata:
-name: nginx
-spec:
-hosts:
-
--   "\*"
-    gateways:
--   nginx-gateway
-    http:
--   name: "nginx-test"
-    match:
-    -   uri:
-        prefix: "/nginx-test"
-        rewrite:
-        uri: "/"
-        route:
-    -   destination:
-        host: nginx.default.svc.cluster.local
-        port:
-        number: 80
-
-```
-
-The `VirtualService` defines a prefix `prefix: "/nginx-test"` so that all requests
-to the `<Enpoint URL>/nginx-test` will be routed to the Nginx `Service`.
-The endpoint URL is a load balancer address of the Istio Ingress Gateway.
-It comes handy to discover and export it to an environment variable for later use:
-
-```
-
-export INGRESS_HOST=$(kubectl get svc istio-ingressgateway --namespace istio-system -o yaml -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-
-```
-
-Now, we can verify that the deployment is exposed via the gateway at `http://$INGRESS_HOST/nginx-test`.
+```text
+Error from server (NotFound): secrets "admin-user" not found
 ```

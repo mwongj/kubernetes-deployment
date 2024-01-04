@@ -27,7 +27,21 @@
   kubernetes.core.helm:
     name: istio-ingressgateway
     chart_ref: istio/gateway
-    release_namespace: ingress
+    release_namespace: istio-system
     create_namespace: true
     wait: true
     kubeconfig: /etc/kubernetes/admin.conf
+
+- name: copy gateway config
+  become: true
+  template:
+    src: ingress-gateway.yaml
+    dest: /etc/ingress-gateway.yaml
+
+- name: create ingress gateway
+  become: true
+  command: kubectl apply -f /etc/ingress-gateway.yaml --kubeconfig=/etc/kubernetes/admin.conf
+
+- name: enable sidecar injection
+  become: true
+  command: kubectl label namespace default istio-injection=enabled --kubeconfig=/etc/kubernetes/admin.conf

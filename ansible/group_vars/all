@@ -3,6 +3,8 @@ kubernetes:
   version: v1.29.0
   apt_version: 1.29.0-1.1
 
+ansible_become_pass: "{{ lookup('ansible.builtin.env', 'ANSIBLE_BECOME_PASSWORD') }}"
+
 kubernetes_dashboard:
   user: admin-user
 
