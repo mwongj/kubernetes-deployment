@@ -258,6 +258,21 @@ spec:
 EOF
 ```
 
+Helpful resources:
+
+-   [Install MetalLB and Istio Ingress Gateway with Mutual TLS for Kubernetes](https://www.lisenet.com/2021/install-metallb-and-istio-ingress-gateway-with-mtls-for-kubernetes/)
+-   [Kubernetes, Istio, Cert Manager, and Let's Encrypt](https://medium.com/@rd.petrusek/kubernetes-istio-cert-manager-and-lets-encrypt-c3e0822a3aaf)
+
+## External-dns
+
+External-dns is used to modify dns entries. This implementation updates AD DNS entries using RFC2136.
+
+To install external-dns, run:
+
+```console
+ansible-playbook -i ansible/inventory.ini ansible/external-dns.yaml -K
+```
+
 ## Kubernetes Dashboard
 
 Install Kubernetes Dashboard following the [docs](https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/). At the moment of writing, it is sufficient to run:
