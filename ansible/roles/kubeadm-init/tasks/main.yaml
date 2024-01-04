@@ -1,9 +1,9 @@
 - name: copy kubeadm init config
-  become: yes
+  become: true
   template:
     src: kubeadm.yaml
     dest: /etc/kubeadm.yaml
 
 - name: running kubeadm init
-  become: yes
+  become: true
   command: kubeadm init --config /etc/kubeadm.yaml

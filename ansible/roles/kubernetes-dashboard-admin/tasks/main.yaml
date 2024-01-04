@@ -1,16 +1,16 @@
 - name: copy kubernetes dashboard config
-  become: yes
+  become: true
   template:
     src: adminuser.yaml
     dest: /etc/adminuser.yaml
 
 - name: adding Kubernetes dashboard admin user
-  become: yes
+  become: true
   command: kubectl apply -f /etc/adminuser.yaml --kubeconfig=/etc/kubernetes/admin.conf
   run_once: true
 
 - name: create admin bearer token for login
-  become: yes
+  become: true
   command: kubectl -n kubernetes-dashboard create token {{ kubernetes_dashboard.user }} --kubeconfig=/etc/kubernetes/admin.conf
   register: command_output
 

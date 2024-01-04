@@ -3,7 +3,7 @@
   name: "Copy kubeconfig from remote"
   tasks:
     - name: fetching
-      become: yes
+      become: true
       fetch:
         src: /etc/kubernetes/admin.conf
         dest: ../admin.conf

@@ -6,13 +6,13 @@
   run_once: True
 
 - name: kubeadm token generate
-  become: yes
+  become: true
   command: kubeadm token list --kubeconfig=/etc/kubernetes/admin.conf -o jsonpath="{ .token }"
   run_once: True
   register: token
 
 - name: generate cert hash
-  become: yes
+  become: true
   shell: "openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* /sha256:/'"
   run_once: True
   register: cert_hash
