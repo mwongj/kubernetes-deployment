@@ -13,3 +13,14 @@ spec:
         protocol: HTTP
       hosts:
         - "*"
+      tls:
+        httpsRedirect: true
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        credentialName: "{{ letsencrypt.name}}-cert-prod"
+      hosts:
+        - "*"

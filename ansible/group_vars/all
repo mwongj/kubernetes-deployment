@@ -23,9 +23,9 @@ istioctl:
 
 letsencrypt:
   name: "wongwayio"
-  email: "{{ lookup('ansible.builtin.env', 'EMAIL') }}"
+  email: "{{ lookup('ansible.builtin.env', 'ACME_EMAIL') }}"
   cloudflare:
-    api_token: "{{ lookup('ansible.builtin.env', 'CF_API_KEY') }}"
+    api_token: "{{ lookup('ansible.builtin.env', 'CF_API_TOKEN') }}"
 
 networking:
   domain: "{{ lookup('ansible.builtin.env', 'AD_DOMAIN') }}"

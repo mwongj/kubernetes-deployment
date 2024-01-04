@@ -45,13 +45,13 @@
   become: true
   command: kubectl apply -f /etc/staging-cluster-issuer.yaml --kubeconfig=/etc/kubernetes/admin.conf
 
-- name: applying prod issuer config
-  become: true
-  command: kubectl apply -f /etc/prod-cluster-issuer.yaml --kubeconfig=/etc/kubernetes/admin.conf
-
 - name: applying staging certificate
   become: true
   command: kubectl apply -f /etc/staging-certificate.yaml --kubeconfig=/etc/kubernetes/admin.conf
+
+- name: applying prod issuer config
+  become: true
+  command: kubectl apply -f /etc/prod-cluster-issuer.yaml --kubeconfig=/etc/kubernetes/admin.conf
 
 - name: applying prod certificate
   become: true

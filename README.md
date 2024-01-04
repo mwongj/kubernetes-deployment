@@ -164,7 +164,7 @@ To expose a deployment via an istio ingress gateway there are several resources 
 
 In the previous playbook to install istio a gateway was created in the `istio-system` namespace with a wildcard host pattern so it can be reused by multiple deployments. The deployments will be routed by the `VirtualServices` using the URL path. It is also possible to create a `Gateway` per application but for the demo purposes, a path-based routing seems to be more convenient.
 
-To verify the installation, MetalLB, Ingress Gateway, and Istio configuration let's create a test Nginx `Deployment` to create the other resources needed for routing along with the nginx deployment.:
+To verify the installation, MetalLB, Ingress Gateway, and Istio configuration let's create a test Nginx `Deployment` to create the other resources needed for routing along with the nginx deployment:
 
 #### Deploying Nginx
 
@@ -179,6 +179,84 @@ export GATEWAY_IP=$(kubectl get svc -n istio-system istio-ingressgateway -ojsonp
 ```
 
 The Nginx welcome page should be available at the gateway ip assigned by metallb, http://$GATEWAY_IP
+
+## Cert-manager
+
+Cert-manager is a certificate management tool that handles issuing or renewing certificates to ensure they are valid and up to date automatically. For the homelab we'll use [LetsEncrypt](https://letsencrypt.org/how-it-works/) to issue certificates and Cloudflare with DNS challenges to secure ingress for the cluster.
+
+Before we create the cluste resources we need to create a Cloudflare API token. Create and verify the domain you want to create an SSL certificate. Go to Cloudflare dashboard > My Profile (Right top corner) > API Tokens. Click Create Token button and Create custom token button. Under permissions add the following resource permissions:
+
+| API Token Resource | API Token Permission            | Value |
+| ------------------ | ------------------------------- | ----- |
+| Account            | Access: Mutual TLS Certificates | Edit  |
+| Account            | Account Settings                | Edit  |
+| Zone               | Zone Settings                   | Edit  |
+| Zone               | Zone                            | Edit  |
+| Zone               | SSL and Certificates            | Edit  |
+| Zone               | DNS                             | Edit  |
+
+Click Create Token. Copy the token and update the environment variable `CF_API_TOKEN` with the value:
+
+```console
+export CF_API_TOKEN=<cloudflare api token>
+```
+
+Set the email to use for LetsEncrypt:
+
+```console
+export ACME_EMAIL=<your email>
+```
+
+Update the staging and prod cluster issuer `dnsNames` values in the `cluster-issuer.yaml` files in `/ansible/roles/cert-manager/templates/`.
+
+There are two issuers, one for staging and one for production. The production LetsEncrypt server is rate limited so start with staging first and once the certificate is issued install the production resources.
+
+**Note: if you want to avoid installing production resources, comment them out in the cert-manager playbook.**
+
+To install cert-manager, run:
+
+```console
+ansible-playbook -i ansible/inventory.ini ansible/cert-manager.yaml -K
+```
+
+You can monitor logs of the certificate issuance with:
+
+```console
+kubectl -n istio-system get certs,certificaterequests,order,challenges,ingress -o wide
+```
+
+Once the certificate has been issued you can update the gateway:
+
+```console
+cat <<EOF | kubectl apply -f -
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: ingress-gateway
+  namespace: istio-system
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "*"
+      tls:
+        httpsRedirect: true
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        credentialName: "wongwayio-cert-prod"
+      hosts:
+        - "*"
+EOF
+```
 
 ## Kubernetes Dashboard
 
