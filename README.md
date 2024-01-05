@@ -267,11 +267,62 @@ Helpful resources:
 
 External-dns is used to modify dns entries. This implementation updates AD DNS entries using RFC2136.
 
+### Create a new forward lookup zone
+
+1. Right click on Forward Lookup Zone
+1. Select Primary zone, click next
+1. For Active Directory Zone Replication Scope keep default "To all DNS servers running on domain controllers in this domain: <domain>", click next
+1. Zone Name: "k8s.wongway.io", click next
+1. Dynamic Updates select "Allow both nonsecure and secure dynamic updates"
+1. Click finish
+1. Right click on the new zone and go to Properties
+1. Select tab "Zone Transfers" and check "Allow zone transfers: To any server"
+
 To install external-dns, run:
 
 ```console
 ansible-playbook -i ansible/inventory.ini ansible/external-dns.yaml -K
 ```
+
+To test dns records are added, run:
+
+```console
+kubectl apply -f ansible/apps/examples/minio/minio.yaml
+```
+
+Refresh the dns records and you should see new records. If you are having issues you can set the log level on the external-dns deployment:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: external-dns
+    namespace: external-dns
+spec:
+    strategy:
+        type: Recreate
+    selector:
+        matchLabels:
+            app: external-dns
+    template:
+        metadata:
+            labels:
+                app: external-dns
+        spec:
+            serviceAccountName: external-dns
+            containers:
+                - name: external-dns
+                  image: registry.k8s.io/external-dns/external-dns:v0.14.0
+                  args:
+                      - --log-level=debug
+                      ...
+```
+
+Helpful resources:
+
+-   [Configuring ExternalDNS to use the Istio Gateway Source](https://github.com/olliebarrick/external-dns/blob/master/docs/tutorials/istio.md)
+-   [rfc2136 tutorial](https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/rfc2136.md)
+-   [Setting up ExternalDNS using the same domain for public and private zones](https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/public-private-route53.md)
 
 ## Kubernetes Dashboard
 

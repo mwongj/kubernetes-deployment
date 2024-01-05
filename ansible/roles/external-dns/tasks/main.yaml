@@ -1,0 +1,9 @@
+- name: copy external-dns config
+  become: true
+  template:
+    src: rfc2136.yaml
+    dest: /etc/rfc2136.yaml
+
+- name: installing external-dns
+  become: true
+  command: kubectl apply -f /etc/rfc2136.yaml --kubeconfig=/etc/kubernetes/admin.conf

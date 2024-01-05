@@ -1,0 +1,5 @@
+---
+- hosts: control_plane
+  name: "Install external-dns"
+  roles:
+    - role: external-dns
