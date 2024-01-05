@@ -11,6 +11,9 @@ kubernetes_dashboard:
 helm:
   version:
 
+1password:
+  credentials_path: "${HOME}/repos/kubernetes-deployment/ansible/1password-credentials.json"
+
 istioctl:
   version: 1.20.1
   download_url: https://github.com/istio/istio/releases/download/1.20.1/istio-1.20.1-linux-amd64.tar.gz

@@ -1,0 +1,21 @@
+- name: add onepassword-connect helm repo
+  become: true
+  kubernetes.core.helm_repository:
+    name: 1password
+    repo_url: https://1password.github.io/connect-helm-charts/
+
+- name: installing onepassword-connect
+  become: true
+  kubernetes.core.helm:
+    name: connect
+    chart_ref: 1password/connect
+    release_namespace: opconnect
+    create_namespace: true
+    set_values:
+      - value: installCRDs=true
+      - value: operator.create=true
+      - value: operator.token.value={{ lookup('ansible.builtin.env', 'OP_TOKEN') }}
+      - value: operator.watchNamespace={opconnect,default}
+      - value: connect.credentials={{ 1password.credentials_path }}
+        value_type: file
+    kubeconfig: "{{ playbook_dir | dirname }}/admin.conf"

@@ -8,3 +8,4 @@ csr.json
 *.tfstate
 *.tfstate.backup
 kubernetes-dashboard-admin-token*
+1password*

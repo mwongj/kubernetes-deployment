@@ -324,6 +324,52 @@ Helpful resources:
 -   [rfc2136 tutorial](https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/rfc2136.md)
 -   [Setting up ExternalDNS using the same domain for public and private zones](https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/public-private-route53.md)
 
+## 1Password Connect
+
+We need a solution to store secrets that integrates with Kubernetes. [1Password Connect along with the 1Password Kubernetes Operator](https://github.com/1Password/onepassword-operator/blob/main/USAGEGUIDE.md) allows for seamless integration of secrets into your cluster.
+
+Before we can install these resources we need to complete the following:
+
+1. Create a separate vault in 1Password to store secrets
+1. [Setup 1Password integration](https://my.1password.com/developer-tools/infrastructure-secrets/connect/?type=kubernetes) - follow the guided experience and get an access token and a credentials file
+1. Download the `1password-credentials.json` file and update the variable `1password.credentials_path`
+1. Set the environment variable `OP_TOKEN` with the access token you configured in step 2.
+
+```console
+export OP_TOKEN=<access token>
+```
+
+Install 1Password Connect server and the 1Password Kubernetes Operator. The playbook will run locally to avoid transmitting the credentials file. The credentials file is also added to the gitignore file to prevent accidentally committing it.
+
+```console
+ansible-playbook -i ansible/inventory.ini ansible/secrets.yaml
+```
+
+Add a vault secret to your cluster:
+
+```console
+cat <<EOF | kubectl apply -f -
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: some-secret-name
+spec:
+  itemPath: "vaults/<vault name>/items/<secret name>"
+EOF
+```
+
+Verify it worked:
+
+```console
+kubectl get onepassworditem,secret <secret name>
+```
+
+Verify the secret was fetched correctly:
+
+```console
+kubectl get secret <secret name> -o=jsonpath='{.data.credential}' | base64 -d
+```
+
 ## Kubernetes Dashboard
 
 Install Kubernetes Dashboard following the [docs](https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/). At the moment of writing, it is sufficient to run:
